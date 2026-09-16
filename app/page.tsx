@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 const stats = [
@@ -18,13 +18,37 @@ const fiturLaporan = [
 ];
 
 const navItems = [
-  { href: "#profile", src: "/profile.png", label: "Profile" },
-  { href: "#karakteristik", src: "/karakteristik.png", label: "Karakteristik" },
-  { href: "#layanan", src: "/layanan.png", label: "Layanan" },
+  { href: "#profile", label: "Profile" },
+  { href: "#karakteristik", label: "Karakteristik" },
+  { href: "#layanan", label: "Layanan" },
 ];
 
 export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
+
+  useEffect(() => {
+    const sections = navItems
+      .map((item) => document.querySelector(item.href))
+      .filter((el): el is Element => el !== null);
+
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(`#${entry.target.id}`);
+          }
+        });
+      },
+      { rootMargin: "-40% 0px -55% 0px" }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, []);
   return (
     <div className="min-h-screen bg-[#F1F1F1] text-[#1A202C]">
       {/* ===== Navbar (1440 canvas: konten 1200 terpusat) ===== */}
@@ -44,31 +68,28 @@ export default function HomePage() {
             </span>
           </a>
           <nav
-            className="hidden items-center gap-4 text-[15px] font-semibold text-black sm:gap-8 md:flex lg:gap-20"
+            className="hidden items-center gap-4 text-[15px] text-black sm:gap-8 md:flex lg:gap-12"
             aria-label="Navigasi utama"
           >
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                className="group relative flex h-14 w-[100px] flex-col items-center justify-center"
-              >
-                <span className="transition-transform duration-300 ease-out group-hover:-translate-y-3">
-                  <Image
-                    src={item.src}
-                    alt=""
-                    aria-hidden="true"
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain"
-                  />
-                </span>
-                <span className="pointer-events-none absolute top-full mt-0.5 translate-y-1 whitespace-nowrap text-sm opacity-0 transition-all duration-300 group-hover:-translate-y-2 group-hover:opacity-100">
+            {navItems.map((item) => {
+              const isActive = activeSection === item.href;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  aria-current={isActive ? "true" : undefined}
+                  onClick={() => setActiveSection(item.href)}
+                  className={`whitespace-nowrap rounded-full px-4 py-2 transition-[background-color,box-shadow,color] duration-300 ease-out hover:bg-[#0F365F]/[0.06] hover:font-extrabold hover:text-[#0F365F] hover:shadow-[0_10px_25px_-8px_rgba(15,54,95,0.45)] ${
+                    isActive
+                      ? "bg-[#0F365F]/[0.08] font-extrabold text-[#0F365F] shadow-[0_10px_25px_-10px_rgba(15,54,95,0.5)]"
+                      : "font-semibold"
+                  }`}
+                >
                   {item.label}
-                </span>
-              </a>
-            ))}
+                </a>
+              );
+            })}
           </nav>
           <button
             type="button"
@@ -100,25 +121,28 @@ export default function HomePage() {
           }`}
         >
           <div className="min-h-0 overflow-hidden">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                tabIndex={menuOpen ? 0 : -1}
-                className="flex items-center gap-3 px-6 py-3.5 text-sm font-semibold text-black transition hover:bg-black/5"
-              >
-                <Image
-                  src={item.src}
-                  alt=""
-                  aria-hidden="true"
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
-                />
-                {item.label}
-              </a>
-            ))}
+            {navItems.map((item) => {
+              const isActive = activeSection === item.href;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => {
+                    setActiveSection(item.href);
+                    setMenuOpen(false);
+                  }}
+                  tabIndex={menuOpen ? 0 : -1}
+                  aria-current={isActive ? "true" : undefined}
+                  className={`mx-3 my-1 block rounded-xl px-4 py-3.5 text-sm transition-[background-color,box-shadow,color] duration-300 ease-out hover:bg-[#0F365F]/[0.06] hover:font-extrabold hover:text-[#0F365F] hover:shadow-[0_10px_25px_-10px_rgba(15,54,95,0.4)] ${
+                    isActive
+                      ? "bg-[#0F365F]/[0.08] font-extrabold text-[#0F365F] shadow-[0_10px_25px_-12px_rgba(15,54,95,0.5)]"
+                      : "font-semibold text-black"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              );
+            })}
           </div>
         </nav>
       </header>
