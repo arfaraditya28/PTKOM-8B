@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 const stats = [
@@ -26,6 +26,47 @@ const navItems = [
 export default function HomePage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+  // Tujuan klik terakhir: selama smooth-scroll menuju ke sana, section lain
+  // yang cuma dilewati (misal Karakteristik saat lompat Profile -> Layanan)
+  // tidak boleh menimpa active state.
+  const pendingTargetRef = useRef<string | null>(null);
+  const lockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Hitung ulang section aktif dari posisi scroll saat ini (pengaman anti-nyangkut).
+  const recomputeActiveSection = () => {
+    const viewportHeight = window.innerHeight;
+    for (const item of navItems) {
+      const el = document.querySelector(item.href);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.top <= viewportHeight * 0.6 && rect.bottom >= viewportHeight * 0.4) {
+        setActiveSection(item.href);
+        return;
+      }
+    }
+  };
+
+  const releaseLock = () => {
+    pendingTargetRef.current = null;
+    if (lockTimeoutRef.current) {
+      clearTimeout(lockTimeoutRef.current);
+      lockTimeoutRef.current = null;
+    }
+  };
+
+  const handleNavClick = (href: string) => {
+    setActiveSection(href);
+    pendingTargetRef.current = href;
+    if (lockTimeoutRef.current) {
+      clearTimeout(lockTimeoutRef.current);
+    }
+    // Pengaman: kalau event arrival/scrollend tidak terjadi, lepas kunci
+    // maksimal 2 detik lalu koreksi posisi aktif dari scroll saat ini.
+    lockTimeoutRef.current = setTimeout(() => {
+      releaseLock();
+      recomputeActiveSection();
+    }, 2000);
+  };
 
   useEffect(() => {
     const sections = navItems
@@ -37,9 +78,17 @@ export default function HomePage() {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(`#${entry.target.id}`);
+          if (!entry.isIntersecting) return;
+          const id = `#${entry.target.id}`;
+          // Masih dalam penerbangan menuju tujuan klik: hanya tujuan yang
+          // boleh mengunci active; section perantara diabaikan.
+          if (pendingTargetRef.current) {
+            if (id === pendingTargetRef.current) {
+              releaseLock();
+            }
+            return;
           }
+          setActiveSection(id);
         });
       },
       { rootMargin: "-40% 0px -55% 0px" }
@@ -47,7 +96,22 @@ export default function HomePage() {
 
     sections.forEach((section) => observer.observe(section));
 
-    return () => observer.disconnect();
+    // Smooth-scroll selesai (klik anchor) -> lepas kunci.
+    const handleScrollEnd = () => {
+      if (pendingTargetRef.current) {
+        releaseLock();
+        recomputeActiveSection();
+      }
+    };
+    window.addEventListener("scrollend", handleScrollEnd);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scrollend", handleScrollEnd);
+      if (lockTimeoutRef.current) {
+        clearTimeout(lockTimeoutRef.current);
+      }
+    };
   }, []);
   return (
     <div className="min-h-screen bg-[#F1F1F1] text-[#1A202C]">
@@ -79,14 +143,27 @@ export default function HomePage() {
                   href={item.href}
                   aria-label={item.label}
                   aria-current={isActive ? "true" : undefined}
-                  onClick={() => setActiveSection(item.href)}
-                  className={`whitespace-nowrap rounded-full px-4 py-2 transition-[background-color,box-shadow,color] duration-300 ease-out hover:bg-[#0F365F]/[0.06] hover:font-extrabold hover:text-[#0F365F] hover:shadow-[0_10px_25px_-8px_rgba(15,54,95,0.45)] ${
+                  onClick={() => handleNavClick(item.href)}
+                  className={`group relative whitespace-nowrap rounded-lg px-4 py-2 after:absolute after:bottom-1 after:left-4 after:right-4 after:h-[2px] after:origin-center after:bg-current after:transition-transform after:duration-300 after:ease-out ${
                     isActive
-                      ? "bg-[#0F365F]/[0.08] font-extrabold text-[#0F365F] shadow-[0_10px_25px_-10px_rgba(15,54,95,0.5)]"
-                      : "font-semibold"
+                      ? "after:scale-x-100"
+                      : "after:scale-x-0 group-hover:after:scale-x-100"
                   }`}
                 >
-                  {item.label}
+                  {/* Placeholder tak terlihat dengan lebar extrabold: mengunci lebar
+                      link agar sibling tidak kegeser saat teks menebal saat hover/active */}
+                  <span aria-hidden="true" className="invisible font-extrabold">
+                    {item.label}
+                  </span>
+                  <span
+                    className={`absolute inset-0 flex items-center justify-center ${
+                      isActive
+                        ? "font-extrabold"
+                        : "font-semibold group-hover:font-extrabold"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </a>
               );
             })}
@@ -128,14 +205,14 @@ export default function HomePage() {
                   key={item.href}
                   href={item.href}
                   onClick={() => {
-                    setActiveSection(item.href);
+                    handleNavClick(item.href);
                     setMenuOpen(false);
                   }}
                   tabIndex={menuOpen ? 0 : -1}
                   aria-current={isActive ? "true" : undefined}
-                  className={`mx-3 my-1 block rounded-xl px-4 py-3.5 text-sm transition-[background-color,box-shadow,color] duration-300 ease-out hover:bg-[#0F365F]/[0.06] hover:font-extrabold hover:text-[#0F365F] hover:shadow-[0_10px_25px_-10px_rgba(15,54,95,0.4)] ${
+                  className={`mx-3 my-1 block rounded-lg px-4 py-3.5 text-sm transition-[background-color,box-shadow] duration-300 ease-out hover:bg-black/[0.04] hover:font-extrabold hover:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.3)] ${
                     isActive
-                      ? "bg-[#0F365F]/[0.08] font-extrabold text-[#0F365F] shadow-[0_10px_25px_-12px_rgba(15,54,95,0.5)]"
+                      ? "bg-black/[0.05] font-extrabold text-black shadow-[0_8px_18px_-10px_rgba(0,0,0,0.3)]"
                       : "font-semibold text-black"
                   }`}
                 >
@@ -159,15 +236,7 @@ export default function HomePage() {
               className="h-32 w-auto"
               priority
             />
-            <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#1960A3] px-5 py-2 text-xs font-semibold uppercase tracking-widest text-white">
-              <Image
-                src="/icon-ceklis.png"
-                alt=""
-                aria-hidden="true"
-                width={14}
-                height={14}
-                className="h-3.5 w-3.5"
-              />
+            <p className="mt-8 inline-flex items-center rounded-full bg-[#1960A3] px-5 py-2 text-xs font-semibold uppercase tracking-widest text-white">
               Pemerintah Kabupaten Lampung Timur, Kecamatan Sekampung
             </p>
             <h1 className="mt-8 max-w-4xl text-5xl font-extrabold leading-[1.15] tracking-tight">
@@ -249,7 +318,7 @@ export default function HomePage() {
         >
           <div className="mx-auto w-full max-w-[1280px]">
             <h2 className="text-[32px] font-extrabold tracking-tight">
-              Gambaran umum wilayah
+              Gambaran Umum Wilayah
             </h2>
             <p className="mt-2 text-[15px] text-black">
               Data dasar kewilayahan sebagai konteks perencanaan layanan di
