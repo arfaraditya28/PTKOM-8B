@@ -15,7 +15,7 @@ npm -v
 ## Cara Menjalankan
 
 ```bash
-git clone <url-repo-ini>
+git clone https://github.com/arfaraditya28/PTKOM-8B.git
 cd portal-sekampung
 npm install
 npm run dev
