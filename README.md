@@ -1,22 +1,10 @@
-# portal-sekampung
-
-## Prasyarat
-
-- Node.js 20+
-- npm
-
-Cek versi:
-
-```bash
-node -v
-npm -v
-```
+# Project PTKOM Kelompok 8 - Team B (Web Pemerintah)
 
 ## Cara Menjalankan
 
 ```bash
 git clone https://github.com/arfaraditya28/PTKOM-8B.git
-cd portal-sekampung
+cd PTKOM-8B
 npm install
 npm run dev
 ```
