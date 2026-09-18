@@ -34,6 +34,11 @@ export default function HomePage() {
 
   // Hitung ulang section aktif dari posisi scroll saat ini (pengaman anti-nyangkut).
   const recomputeActiveSection = () => {
+    // Paling atas (hero): tidak ada nav yang aktif.
+    if (window.scrollY < 80) {
+      setActiveSection("");
+      return;
+    }
     const viewportHeight = window.innerHeight;
     for (const item of navItems) {
       const el = document.querySelector(item.href);
@@ -54,17 +59,54 @@ export default function HomePage() {
     }
   };
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
     setActiveSection(href);
     pendingTargetRef.current = href;
     if (lockTimeoutRef.current) {
       clearTimeout(lockTimeoutRef.current);
+    }
+    // Scroll manual dengan offset tinggi navbar + jeda per-section:
+    // Profile 16px (pas), Karakteristik & Layanan -18px (lebih naik lagi,
+    // section sedikit masuk ke bawah navbar tapi konten tetap aman karena py-10).
+    const extraMap: Record<string, number> = {
+      "#profile": 16,
+      "#karakteristik": -18,
+      "#layanan": -18,
+    };
+    const extra = extraMap[href] ?? 16;
+    const el = document.querySelector(href);
+    const headerEl = document.querySelector("header");
+    const headerHeight =
+      headerEl instanceof HTMLElement ? headerEl.offsetHeight : 88;
+    if (el) {
+      const top =
+        el.getBoundingClientRect().top + window.scrollY - headerHeight - extra;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     }
     // Pengaman: kalau event arrival/scrollend tidak terjadi, lepas kunci
     // maksimal 2 detik lalu koreksi posisi aktif dari scroll saat ini.
     lockTimeoutRef.current = setTimeout(() => {
       releaseLock();
       recomputeActiveSection();
+    }, 2000);
+  };
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setActiveSection("");
+    // Kunci observer selama terbang ke atas: section perantara (Layanan ->
+    // Karakteristik -> Profile) tidak boleh menyalakan nav di tengah jalan.
+    // "#top" tidak akan pernah sama dengan id section, jadi semua diabaikan
+    // sampai scrollend/timeout.
+    pendingTargetRef.current = "#top";
+    if (lockTimeoutRef.current) {
+      clearTimeout(lockTimeoutRef.current);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    lockTimeoutRef.current = setTimeout(() => {
+      releaseLock();
+      setActiveSection("");
     }, 2000);
   };
 
@@ -98,6 +140,11 @@ export default function HomePage() {
 
     // Smooth-scroll selesai (klik anchor) -> lepas kunci.
     const handleScrollEnd = () => {
+      if (pendingTargetRef.current === "#top") {
+        releaseLock();
+        setActiveSection("");
+        return;
+      }
       if (pendingTargetRef.current) {
         releaseLock();
         recomputeActiveSection();
@@ -105,20 +152,30 @@ export default function HomePage() {
     };
     window.addEventListener("scrollend", handleScrollEnd);
 
+    // Scroll manual ke paling atas (tanpa klik logo): pastikan tidak ada
+    // nav nyangkut aktif.
+    const handleScroll = () => {
+      if (window.scrollY < 80 && !pendingTargetRef.current) {
+        setActiveSection("");
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
       observer.disconnect();
       window.removeEventListener("scrollend", handleScrollEnd);
+      window.removeEventListener("scroll", handleScroll);
       if (lockTimeoutRef.current) {
         clearTimeout(lockTimeoutRef.current);
       }
     };
   }, []);
   return (
-    <div className="min-h-screen bg-[#F1F1F1] text-[#1A202C]">
+    <div id="top" className="min-h-screen bg-[#F1F1F1] text-[#1A202C]">
       {/* ===== Navbar (1440 canvas: konten 1200 terpusat) ===== */}
       <header className="sticky top-0 z-50 border-b border-black/5 bg-white">
         <div className="flex w-full items-center justify-between px-6 py-4 sm:px-10 lg:px-14">
-          <a href="#top" className="flex items-center gap-3">
+          <a href="#top" onClick={handleLogoClick} className="flex items-center gap-3">
             <Image
               src="/logo-sekampung.png"
               alt="Logo Kecamatan Sekampung"
@@ -143,7 +200,7 @@ export default function HomePage() {
                   href={item.href}
                   aria-label={item.label}
                   aria-current={isActive ? "true" : undefined}
-                  onClick={() => handleNavClick(item.href)}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className={`group relative whitespace-nowrap rounded-lg px-4 py-2 after:absolute after:bottom-1 after:left-4 after:right-4 after:h-[2px] after:origin-center after:bg-current after:transition-transform after:duration-300 after:ease-out ${
                     isActive
                       ? "after:scale-x-100"
@@ -204,8 +261,8 @@ export default function HomePage() {
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={() => {
-                    handleNavClick(item.href);
+                  onClick={(e) => {
+                    handleNavClick(e, item.href);
                     setMenuOpen(false);
                   }}
                   tabIndex={menuOpen ? 0 : -1}
@@ -224,9 +281,9 @@ export default function HomePage() {
         </nav>
       </header>
 
-      <main id="top">
+      <main>
         {/* ===== Hero ===== */}
-        <section className="px-6 pb-24 pt-16 text-center">
+        <section className="flex min-h-[calc(100svh-88px)] items-center justify-center px-6 pb-14 pt-8 text-center">
           <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center">
             <Image
               src="/logo-sekampung.png"
@@ -250,6 +307,7 @@ export default function HomePage() {
             </p>
             <a
               href="#layanan"
+              onClick={(e) => handleNavClick(e, "#layanan")}
               className="mt-8 inline-flex items-center gap-2.5 rounded-lg bg-[#0F365F] px-7 py-3.5 text-sm font-bold text-white shadow transition hover:brightness-125"
             >
               <Image
@@ -266,7 +324,7 @@ export default function HomePage() {
         </section>
 
         {/* ===== Profile / Tentang ===== */}
-        <section id="profile" className="scroll-mt-4 px-6 py-20">
+        <section id="profile" className="scroll-mt-[104px] px-6 py-10">
           <div className="mx-auto w-full max-w-[1280px] rounded-3xl bg-white p-10 shadow-sm">
             <h2 className="text-[26px] font-extrabold leading-tight tracking-tight sm:text-[28px] md:text-[32px]">
               <span className="whitespace-nowrap">Tentang Kecamatan</span>{" "}
@@ -314,7 +372,7 @@ export default function HomePage() {
         {/* ===== Karakteristik ===== */}
         <section
           id="karakteristik"
-          className="scroll-mt-4 px-6 py-20"
+          className="scroll-mt-[70px] px-6 py-10"
         >
           <div className="mx-auto w-full max-w-[1280px]">
             <h2 className="text-[32px] font-extrabold tracking-tight">
@@ -390,7 +448,7 @@ export default function HomePage() {
         </section>
 
         {/* ===== Layanan ===== */}
-        <section id="layanan" className="scroll-mt-24 px-6 pb-24 pt-6">
+        <section id="layanan" className="scroll-mt-[70px] px-6 pb-16 pt-10">
           <div className="mx-auto w-full max-w-[1280px]">
             <h2 className="text-center text-4xl font-extrabold uppercase tracking-tight text-black sm:text-[40px]">
               Portal Layanan Terpadu
