@@ -1,45 +1,78 @@
 # User Flow
 
-## Masyarakat
+## 1. Masyarakat
+
+Masyarakat tidak perlu login atau membuat akun.
 
 Landing Page
 ↓
 Melihat Informasi
 ↓
-Login / Register
+Membuat Pengaduan
 ↓
-Membuat Laporan
+Mengisi Form Laporan
 ↓
-Melihat Status
+Upload Bukti (Opsional)
 ↓
-Menerima Tanggapan
+Mengirim Laporan
+↓
+Mendapatkan Nomor Laporan + Kode Tracking
+↓
+Melakukan Tracking Laporan
+↓
+Melihat Status dan Tanggapan
 ↓
 Laporan Selesai
 
-## Petugas
+## 2. Petugas
+
+Petugas harus login untuk mengakses sistem.
 
 Login
 ↓
 Dashboard
 ↓
-Melihat Laporan
+Melihat Daftar Laporan
+↓
+Melihat Detail Laporan
 ↓
 Verifikasi Laporan
 ↓
 Memproses Laporan
 ↓
+Mengubah Status
+↓
 Memberikan Tanggapan
 ↓
-Selesai
+Laporan Selesai
 
-## Admin
+## 3. Admin
+
+Admin harus login untuk mengakses sistem.
 
 Login
 ↓
 Dashboard
 ↓
-Mengelola Data
+Mengelola Pengguna Internal
+↓
+Mengelola Kategori
 ↓
 Mengelola Laporan
 ↓
+Mengelola Data Layanan
+↓
 Melihat Statistik
+
+## 4. Status Laporan
+
+Diajukan
+↓
+Diverifikasi
+↓
+Diproses
+↓
+Selesai
+
+Laporan dapat berakhir pada status Ditolak apabila tidak memenuhi
+persyaratan.

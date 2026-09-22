@@ -17,17 +17,31 @@ masyarakat secara digital.
 ## 4. Target Pengguna
 
 ### Masyarakat
-Pengguna yang membutuhkan informasi dan layanan pengaduan.
+
+Pengguna yang membutuhkan informasi publik dan ingin menyampaikan
+laporan atau pengaduan.
+
+Masyarakat tidak perlu membuat akun atau login untuk menggunakan
+layanan pengaduan.
 
 ### Petugas
-Pengguna yang menangani dan memproses laporan masyarakat.
+
+Pengguna internal yang bertugas menerima, memverifikasi, memproses,
+dan memberikan tanggapan terhadap laporan masyarakat.
+
+Petugas harus login untuk mengakses sistem.
 
 ### Admin
-Pengguna yang mengelola sistem dan data layanan.
+
+Pengguna internal yang mengelola sistem, pengguna, kategori,
+layanan, dan data laporan.
+
+Admin harus login untuk mengakses sistem.
 
 ## 5. Fitur Utama
 
 ### Public
+
 - Landing page
 - Informasi pemerintah
 - Informasi wilayah
@@ -35,29 +49,40 @@ Pengguna yang mengelola sistem dan data layanan.
 - Daftar laporan publik
 
 ### Masyarakat
-- Registrasi
-- Login
-- Membuat laporan
-- Mengunggah bukti
-- Melihat riwayat laporan
-- Melacak status laporan
+
+- Membuat laporan tanpa login
+- Mengisi data laporan
+- Mengunggah bukti pendukung
+- Mendapatkan nomor laporan
+- Mendapatkan kode tracking
+- Melacak status laporan menggunakan kode tracking
+- Melihat tanggapan terhadap laporan
 
 ### Petugas
+
+- Login
 - Dashboard laporan
+- Melihat detail laporan
 - Verifikasi laporan
 - Mengubah status laporan
 - Memberikan tanggapan
+- Melihat riwayat proses laporan
 
 ### Admin
+
+- Login
 - Dashboard
-- Kelola pengguna
+- Kelola pengguna internal
 - Kelola kategori
 - Kelola laporan
 - Kelola data layanan
+- Melihat statistik laporan
 
-## 6. Status Laporan
+## 6. Alur Laporan
 
-Diajukan
+Masyarakat membuat laporan
+↓
+Laporan diterima
 ↓
 Diverifikasi
 ↓
@@ -67,7 +92,15 @@ Selesai
 
 Laporan juga dapat ditolak apabila tidak memenuhi persyaratan.
 
-## 7. Catatan
+## 7. Akses Pengguna
+
+| Pengguna | Login | Akses |
+|---|---|---|
+| Masyarakat | Tidak | Layanan publik, membuat laporan, tracking |
+| Petugas | Ya | Mengelola dan memproses laporan |
+| Admin | Ya | Mengelola sistem dan data |
+
+## 8. Catatan
 
 Project ini masih dalam tahap prototype dan desain.
 Struktur fitur, tampilan, API, dan database dapat berubah
