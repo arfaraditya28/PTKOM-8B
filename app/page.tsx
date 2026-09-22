@@ -201,10 +201,10 @@ export default function HomePage() {
                   aria-label={item.label}
                   aria-current={isActive ? "true" : undefined}
                   onClick={(e) => handleNavClick(e, item.href)}
-                  className={`group relative whitespace-nowrap rounded-lg px-4 py-2 after:absolute after:bottom-1 after:left-4 after:right-4 after:h-[2px] after:origin-center after:bg-current after:transition-transform after:duration-300 after:ease-out ${
+                  className={`group relative whitespace-nowrap rounded-lg px-4 py-2 after:absolute after:bottom-1 after:left-4 after:right-4 after:h-[2px] after:origin-center after:bg-current after:content-[''] after:transition-transform after:duration-300 after:ease-out ${
                     isActive
                       ? "after:scale-x-100"
-                      : "after:scale-x-0 group-hover:after:scale-x-100"
+                      : "after:scale-x-0 hover:after:scale-x-100 focus-visible:after:scale-x-100"
                   }`}
                 >
                   {/* Placeholder tak terlihat dengan lebar extrabold: mengunci lebar
