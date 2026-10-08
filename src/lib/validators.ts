@@ -7,6 +7,7 @@ export const createReportSchema = z.object({
   title: z.string().min(5, "Judul minimal 5 karakter").max(200),
   description: z.string().min(10, "Deskripsi minimal 10 karakter"),
   location: z.string().min(3, "Lokasi wajib diisi"),
+  agency: z.string().max(200).optional(),
   incidentDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), {
     message: "incidentDate harus tanggal valid (YYYY-MM-DD)",
   }),

@@ -56,6 +56,7 @@ model Report {
   title           String
   description     String
   location        String
+  agency          String?
   incidentDate    DateTime
   reporterName    String
   reporterContact String

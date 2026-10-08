@@ -58,6 +58,7 @@ Masyarakat dapat membuat laporan tanpa login.
 | title | String | Judul laporan |
 | description | String | Isi laporan |
 | location | String | Lokasi kejadian |
+| agency | String | Instansi tujuan (opsional) |
 | incidentDate | DateTime | Waktu kejadian |
 | reporterName | String | Nama pelapor |
 | reporterContact | String | Kontak pelapor |
