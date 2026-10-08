@@ -56,6 +56,7 @@ Data yang dikirim:
       "title": "Judul laporan",
       "description": "Deskripsi laporan",
       "location": "Lokasi kejadian",
+      "agency": "Instansi tujuan (opsional)",
       "incidentDate": "2026-09-22",
       "reporterName": "Nama pelapor",
       "reporterContact": "Kontak pelapor"

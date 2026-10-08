@@ -17,6 +17,7 @@ export async function GET(
       trackingCode: true,
       title: true,
       status: true,
+      agency: true,
       createdAt: true,
       updatedAt: true,
       category: { select: { id: true, name: true } },
