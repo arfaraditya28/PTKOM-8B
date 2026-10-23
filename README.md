@@ -1,154 +1,76 @@
-# Project PTKOM Kelompok 8 - Team B (Web Pemerintah)
+# PTKOM 8B — Backend Portal Pengaduan Kecamatan Sekampung
 
-## Cara Menjalankan
+Backend menggunakan Next.js Route Handlers, TypeScript, Prisma 6 dan PostgreSQL. Masyarakat dapat membuat laporan tanpa akun; petugas dan admin memakai login internal. Kebutuhan fitur mengikuti [PRD](docs/PRD.md) dan [alur pengguna](docs/USER-FLOW.md).
 
-```bash
-git clone https://github.com/arfaraditya28/PTKOM-8B.git
-cd PTKOM-8B
-npm install
-npm run dev
+## Fitur
+
+- Login, profil sesi dan logout; password disimpan sebagai hash bcrypt.
+- Akun admin/petugas, pengaturan role, penonaktifan akun, pembatalan sesi dan perlindungan admin terakhir.
+- Pengiriman laporan, nomor urut harian WIB dan kode tracking acak.
+- Tracking status/tanggapan tanpa menampilkan identitas, kontak, lokasi atau bukti pelapor.
+- Daftar laporan dengan pencarian, filter, pagination, detail dan riwayat.
+- Alur DIAJUKAN → DIVERIFIKASI → DIPROSES → SELESAI; penolakan wajib disertai alasan.
+- Unggah PNG/JPEG/PDF hingga 5 MB, maksimal tiga file per laporan; unduh bukti memerlukan login.
+- Publikasi laporan memakai judul dan ringkasan yang ditinjau admin.
+- Pengelolaan kategori dan layanan serta statistik laporan.
+- Validasi request, penanganan error, pemeriksaan kesiapan dan tes otomatis.
+
+Paket ini berisi backend dan frontend awal proyek. Halaman form, login dan dashboard beserta pemanggilan API dikerjakan pada bagian frontend. Daftar API dan contoh request tersedia di [docs/API.md](docs/API.md).
+
+## Menjalankan di Windows
+
+Gunakan Node.js 22 atau 24. Buka folder yang **langsung berisi `package.json`** di VS Code.
+
+```powershell
+npm.cmd ci
+npm.cmd run env:setup
+npm.cmd run db:generate
 ```
 
-Buka `http://localhost:3000`.
+`env:setup` menyiapkan `.env` dan membuat secret/password awal yang kosong. DATABASE_URL, JWT yang sudah valid dan password yang sudah terisi dipertahankan. Buka `.env`, lalu isi DATABASE_URL dengan connection string PostgreSQL/Neon milikmu. Password akun awal tersimpan pada SEED_ADMIN_PASSWORD dan SEED_PETUGAS_PASSWORD.
 
-## Scripts
+**Database baru/kosong:**
 
-```bash
-npm run dev    # mode development
-npm run build  # build untuk production
-npm run start  # menjalankan hasil build
-npm run lint   # menjalankan ESLint
+```powershell
+npm.cmd run db:setup
+npm.cmd run backend:check
+npm.cmd run dev
 ```
 
-## Struktur Direktori
+**Database yang sudah dipakai dengan paket backend sebelumnya dan setup berhasil:**
 
-```
-app/            # page.tsx, layout.tsx, globals.css
-public/         # aset statis
-next.config.ts
-tsconfig.json
-package.json
+```powershell
+npm.cmd run backend:check
+npm.cmd run dev
 ```
 
-Tidak ada konfigurasi tambahan. Tanpa `.env`, database, maupun Docker.
+Database lama dari kode awal mengikuti [panduan upgrade](docs/BACKEND.md#upgrade-database-yang-sudah-digunakan). Pemeriksaan kesiapan tidak mengubah database.
 
----
+Server lokal: <http://localhost:3000>. Pemeriksaan koneksi: <http://localhost:3000/api/health>. Kategori: <http://localhost:3000/api/categories>.
 
-## Panduan Kerjasama (Branch & Kolaborasi)
+Login melalui API/Postman memakai `admin` atau `petugas01` dengan password saat akun pertama dibuat. Seed ulang mempertahankan akun, password dan kategori lama.
 
-Panduan ini wajib diikuti semua kontributor agar riwayat git tetap rapi dan review mudah.
+## Pengujian
 
-### 1. Format Branch
-
-```
-<type>/<nama>/<pekerjaan>
+```powershell
+npm.cmd run verify
 ```
 
-| Bagian | Aturan | Contoh |
-|---|---|---|
-| `<type>` | Jenis pekerjaan. Pilih salah satu di bawah | `feat`, `fix`, `chore` |
-| `<nama>` | Nama panggilan / username GitHub, huruf kecil, tanpa spasi, kebab-case | `arfa`, `budi`, `putri` |
-| `<pekerjaan>` | Deskripsi singkat pekerjaan, kebab-case, 2–4 kata, tanpa spasi | `form-laporan`, `tracking-laporan` |
+Perintah tersebut menjalankan lint, unit/database test, integrasi embedded, build dan pemeriksaan TypeScript. Tes embedded menggunakan database sementara tanpa kredensial Neon.
 
-**Daftar `<type>` yang diizinkan:**
+Untuk menguji melalui server HTTP yang dijalankan otomatis, gunakan **database uji** yang sudah disiapkan dan hasil build terbaru:
 
-- `feat` / `feature` — fitur baru
-- `fix` — perbaikan bug
-- `chore` — tooling, deps, config, build
-- `docs` — dokumentasi
-- `refactor` — refactor tanpa ubah behavior
-- `style` — styling/UI saja
-- `test` — tambah/perbaiki test
-
-**Contoh benar:**
-
-```
-feat/arfa/form-laporan
-feat/budi/section-profil
-feat/putri/tracking-laporan
-fix/arfa/validasi-form
-fix/budi/upload-foto
-chore/putri/update-deps
-docs/arfa/panduan-branch
-refactor/budi/footer-layout
+```powershell
+$env:ALLOW_INTEGRATION_TEST = "1"
+npm.cmd run test:http
 ```
 
-**Contoh salah:**
+Server tes memakai port lokal sendiri dan ditutup sesudah tes. Data buatan tes dibersihkan; counter nomor laporan tetap maju. Pengujian PostgreSQL 17 juga disiapkan pada GitHub Actions untuk push ke `syehab`/`main` dan pull request. Hasil pemeriksaan paket dicatat di [docs/HASIL-PENGUJIAN.md](docs/HASIL-PENGUJIAN.md).
 
-```
-Feat/Arfa/Form Laporan       # jangan pakai huruf besar & spasi
-feature-arfa-form-laporan    # harus pakai slash /
-feat/arfa/                   # pekerjaan tidak boleh kosong
-```
+## Build dan penggunaan API
 
-### 2. Alur Kerja (Workflow)
+`npm.cmd run build` membuat build produksi; `npm.cmd start` menjalankannya. [Panduan backend](docs/BACKEND.md) menjelaskan konfigurasi, upgrade dan integrasi frontend. Koleksi [Postman](docs/PTKOM-Backend.postman_collection.json) tersedia untuk mencoba API tanpa menunggu halaman frontend.
 
-```bash
-# 1. Sync main terbaru
-git checkout main
-git pull origin main
+## Unggah ke GitHub
 
-# 2. Buat branch baru sesuai format
-git checkout -b feat/arfa/nama-pekerjaan
-
-# 3. Kerjakan, lalu commit dengan pesan jelas
-git add .
-git commit -m "feat: tambah form laporan warga"
-
-# 4. Push branch ke remote
-git push -u origin feat/arfa/nama-pekerjaan
-
-# 5. Buka Pull Request (PR) di GitHub: base = main, compare = branch kamu
-# 6. Tunggu CI lolos (lint, test, build) dan minta 1 review
-# 7. Setelah di-approve -> Squash and merge -> hapus branch
-```
-
-**Aturan penting:**
-
-- Selalu branch dari `main` terbaru. Jangan branch dari branch orang lain tanpa koordinasi.
-- Satu branch = satu pekerjaan/fitur. Jangan campur banyak fitur dalam satu branch.
-- Jangan push langsung ke `main`. Semua perubahan wajib lewat PR.
-- Selalu `git pull --rebase origin main` jika `main` sudah maju saat kamu masih mengerjakan branch.
-- Hapus branch setelah PR di-merge (`git branch -d feat/arfa/nama-pekerjaan`).
-
-### 3. Aturan Commit & Pull Request
-
-**Commit message (disarankan Conventional Commits):**
-
-```
-feat: tambah form laporan warga
-feat: tambah halaman tracking laporan
-fix: perbaiki validasi form pengaduan
-fix: perbaiki upload foto laporan
-chore: update deps Next 16
-docs: tambah panduan kerjasama di README
-```
-
-**Judul PR:** jelas dan pakai prefix yang sama, contoh `feat(arfa): form laporan warga`
-
-**Deskripsi PR wajib isi:**
-
-- Apa yang diubah (what)
-- Kenapa diubah (why)
-- Cara test manual (jika perlu)
-- Screenshot (untuk perubahan UI)
-
-**Checklist sebelum minta review:**
-
-- [ ] `npm run lint` lolos
-- [ ] `npm run test` lolos (jika ada test)
-- [ ] `npm run build` berhasil
-- [ ] Tidak ada `console.log` tertinggal
-- [ ] Sudah test manual di `http://localhost:3000`
-
-### 4. Review & Merge
-
-- Minimal 1 approval sebelum merge.
-- CI di `.github/workflows/ci.yml` wajib hijau (lint, test, build).
-- Merge strategy: **Squash and merge** agar riwayat `main` tetap bersih.
-- Konflik? Rebase dari `main` dulu, jangan merge `main` ke branch kamu.
-
-### 5. Penamaan Lain
-
-- Issue branch opsional: boleh tambah nomor issue di pekerjaan, contoh `feat/arfa/12-form-laporan` jika pakai GitHub Issues.
-- Hotfix urgent: `fix/putri/hotfix-form-laporan` lalu PR langsung dengan label `urgent`.
+Ikuti [docs/UPLOAD-GITHUB.md](docs/UPLOAD-GITHUB.md) untuk menyalin kode ke clone repository pada branch `syehab`, memeriksa perubahan, lalu commit dan push. ZIP tidak berisi riwayat Git, `.env`, dependency terpasang atau hasil build. Daftar perubahan ada di [docs/PERUBAHAN.md](docs/PERUBAHAN.md).

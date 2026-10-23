@@ -1,3 +1,4 @@
+import { api } from "@/src/lib/http";
 import { prisma } from "@/src/lib/prisma";
 
 /**
@@ -5,7 +6,7 @@ import { prisma } from "@/src/lib/prisma";
  * Sesuai catatan keamanan docs/DATABASE.md: data pribadi pelapor
  * (nama & kontak) TIDAK dikembalikan ke publik.
  */
-export async function GET(
+export const GET = api(async function (
   _req: Request,
   context: { params: Promise<{ code: string }> }
 ) {
@@ -26,7 +27,7 @@ export async function GET(
       },
       statusHistories: {
         orderBy: { createdAt: "asc" },
-        select: { status: true, note: true, createdAt: true },
+        select: { status: true, createdAt: true },
       },
     },
   });
@@ -48,4 +49,4 @@ export async function GET(
     response: latestResponse,
     detail: report,
   });
-}
+});

@@ -1,10 +1,11 @@
+import { api } from "@/src/lib/http";
 import { prisma } from "@/src/lib/prisma";
 import { forbidden, getAuthUser, unauthorized } from "@/src/lib/auth";
 import { ReportStatus } from "@prisma/client";
 
 /** GET /api/admin/statistics — statistik laporan (khusus ADMIN). */
-export async function GET(req: Request) {
-  const user = getAuthUser(req);
+export const GET = api(async function (req: Request) {
+  const user = await getAuthUser(req);
   if (!user) return unauthorized();
   if (user.role !== "ADMIN") return forbidden("Hanya admin.");
 
@@ -32,4 +33,4 @@ export async function GET(req: Request) {
   return Response.json({
     data: { total, totalUsers, byStatus, byCategory },
   });
-}
+});

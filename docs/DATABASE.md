@@ -1,159 +1,26 @@
-# Database Documentation
+# Database backend
 
-## 1. Overview
+Sumber schema: `prisma/schema.prisma`. PostgreSQL digunakan untuk pengembangan dan deployment (Neon). Prisma Client menghubungkan route Next.js dengan database.
 
-Database digunakan untuk menyimpan data pengguna internal,
-laporan masyarakat, kategori laporan, tanggapan, dan riwayat
-perubahan status laporan.
+| Model | Isi utama |
+|---|---|
+| User | Akun internal, password bcrypt, role ADMIN/PETUGAS, isActive, tokenVersion |
+| Category | Nama kategori unik dan deskripsi |
+| Report | Nomor unik, tracking unik, kategori, isi laporan, lokasi, tanggal kejadian, identitas pelapor, status, publikasi |
+| Attachment | Relasi laporan, nama server, MIME, ukuran dan bytes file; fileUrl nullable dipertahankan untuk data lama |
+| Comment | Tanggapan petugas yang dapat dilihat warga melalui tracking |
+| StatusHistory | Status, waktu, note internal dan userId nullable (null berarti sistem) |
+| ReportCounter | Satu baris setiap tanggal WIB (YYYYMMDD), nilai urutan atomik |
+| Service | Nama layanan unik, deskripsi, persyaratan, jam layanan, kontak, status aktif |
 
-Project direncanakan menggunakan Prisma sebagai ORM.
+Status: DIAJUKAN, DIVERIFIKASI, DIPROSES, SELESAI, DITOLAK.
 
-Struktur Prisma nantinya berada di:
+Report berelasi dengan Category; Attachment, Comment dan StatusHistory berelasi dengan Report. Comment/StatusHistory merujuk akun internal. Warga tidak memiliki akun. Penghapusan akun melalui API berarti nonaktif; data historis tidak dihapus.
 
-    prisma/
+`Report.isPublic` default false. Daftar publik hanya mengambil reportNumber, publicTitle, publicSummary, kategori, status dan waktu. Nama/kontak, lokasi asli, judul asli, tracking, bukti dan catatan internal tidak dipilih oleh endpoint publik.
 
-## 2. User
+Penomoran memakai upsert/increment ReportCounter dalam transaksi yang sama dengan pembuatan Report dan riwayat awal. Format LAP-YYYYMMDD-0001; tanggal memakai Asia/Jakarta. Tracking baru memakai randomBytes(16) (128 bit) dalam format TRK-32_HEX. Kode lama tetap dapat dilacak.
 
-Tabel `User` digunakan untuk menyimpan akun Petugas dan Admin.
+Bukti baru wajib memiliki content/size pada jalur upload. Kolom nullable hanya untuk mempertahankan record Attachment lama. Database menyimpan bytes secara privat; route download mewajibkan sesi petugas/admin dan memberi Content-Disposition attachment serta no-store.
 
-Masyarakat tidak memiliki akun sehingga tidak disimpan sebagai
-User.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| name | String | Nama pengguna |
-| username | String | Username |
-| password | String | Password yang sudah di-hash |
-| role | String | PETUGAS atau ADMIN |
-| createdAt | DateTime | Waktu dibuat |
-| updatedAt | DateTime | Waktu diperbarui |
-
-## 3. Category
-
-Tabel `Category` digunakan untuk menyimpan kategori laporan.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| name | String | Nama kategori |
-| description | String | Deskripsi kategori |
-| createdAt | DateTime | Waktu dibuat |
-| updatedAt | DateTime | Waktu diperbarui |
-
-Satu kategori dapat digunakan oleh banyak laporan.
-
-## 4. Report
-
-Tabel `Report` digunakan untuk menyimpan laporan masyarakat.
-
-Masyarakat dapat membuat laporan tanpa login.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| reportNumber | String | Nomor laporan |
-| trackingCode | String | Kode tracking |
-| categoryId | String | Relasi ke Category |
-| title | String | Judul laporan |
-| description | String | Isi laporan |
-| location | String | Lokasi kejadian |
-| incidentDate | DateTime | Waktu kejadian |
-| reporterName | String | Nama pelapor |
-| reporterContact | String | Kontak pelapor |
-| status | String | Status laporan |
-| createdAt | DateTime | Waktu laporan dibuat |
-| updatedAt | DateTime | Waktu diperbarui |
-
-Report memiliki relasi dengan Category.
-
-Report tidak memiliki relasi User untuk masyarakat.
-
-## 5. Attachment
-
-Tabel `Attachment` digunakan untuk menyimpan informasi
-file bukti yang diunggah pada laporan.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| reportId | String | Relasi ke Report |
-| fileName | String | Nama file |
-| fileUrl | String | Lokasi file |
-| fileType | String | Jenis file |
-| createdAt | DateTime | Waktu upload |
-
-Satu laporan dapat memiliki beberapa attachment.
-
-## 6. Comment
-
-Tabel `Comment` digunakan untuk menyimpan tanggapan dari
-Petugas atau Admin terhadap laporan.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| reportId | String | Relasi ke Report |
-| userId | String | Relasi ke User |
-| message | String | Isi tanggapan |
-| createdAt | DateTime | Waktu dibuat |
-
-Satu laporan dapat memiliki beberapa tanggapan.
-
-## 7. StatusHistory
-
-Tabel `StatusHistory` digunakan untuk mencatat perubahan
-status laporan.
-
-| Field | Type | Keterangan |
-|---|---|---|
-| id | String | Primary key |
-| reportId | String | Relasi ke Report |
-| userId | String | Pengguna yang mengubah status |
-| status | String | Status baru |
-| note | String | Catatan perubahan |
-| createdAt | DateTime | Waktu perubahan |
-
-Status yang digunakan:
-
-- DIAJUKAN
-- DIVERIFIKASI
-- DIPROSES
-- SELESAI
-- DITOLAK
-
-## 8. Relasi Database
-
-Relasi utama:
-
-    User
-     │
-     ├── Comment
-     │
-     └── StatusHistory
-
-    Category
-       │
-       └── Report
-             │
-             ├── Attachment
-             ├── Comment
-             └── StatusHistory
-
-Masyarakat tidak memiliki akun dan tidak memiliki relasi
-langsung ke tabel User.
-
-## 9. Catatan Keamanan
-
-- Password User harus disimpan dalam bentuk hash.
-- Password tidak boleh disimpan dalam bentuk plaintext.
-- Kode tracking digunakan untuk mengakses informasi laporan publik.
-- Data pribadi pelapor tidak boleh ditampilkan pada halaman publik.
-- Akses Petugas dan Admin harus menggunakan autentikasi dan otorisasi.
-
-## 10. Catatan Project
-
-Database ini masih berupa rancangan untuk prototype.
-
-Struktur tabel, field, relasi, dan teknologi database dapat
-berubah selama proses pengembangan.
+Setup dan upgrade dijelaskan dalam BACKEND.md. Berkas SQL hasil diff ada di `docs/sql/`.
