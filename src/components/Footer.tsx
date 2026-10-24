@@ -41,6 +41,7 @@ export function Footer() {
             <p className="text-lg font-extrabold">
               Layanan Online Mandiri 24/7
             </p>
+            <div className="mt-3 flex flex-wrap gap-4 underline"><a href="/tracking">Lacak laporan</a><a href="/laporan-publik">Laporan publik</a><a href="/login">Login petugas</a></div>
             <p className="mt-2 text-white">
               Pengaduan berkas online dan pelaporan warga tetap dapat
               dilakukan setiap saat melalui portal ini.

@@ -1,154 +1,78 @@
-# Project PTKOM Kelompok 8 - Team B (Web Pemerintah)
+# Portal Kecamatan Sekampung — PTKOM 8B
 
-## Cara Menjalankan
+Paket backend dan integrasi halaman dari `PTKOM-8B-main.zip` terbaru, 24 Oktober 2026. Next.js 16.3.5, Prisma 6.19.3, PostgreSQL/Neon. API dan halaman berjalan dalam satu aplikasi; tidak perlu server backend terpisah.
 
-```bash
-git clone https://github.com/arfaraditya28/PTKOM-8B.git
-cd PTKOM-8B
-npm install
-npm run dev
+## Menjalankan di Windows
+
+Buka folder **yang berisi package.json** di VS Code. Gunakan Node.js 22 atau 24 dan terminal PowerShell:
+
+```powershell
+npm.cmd ci
+npm.cmd run env:setup
 ```
 
-Buka `http://localhost:3000`.
+Buka `.env` sejajar dengan `package.json`, lalu isi `DATABASE_URL` menggunakan connection string database pengembangan milikmu. Jika sudah memiliki `.env` yang valid dari folder kerja sebelumnya, salin file itu ke folder ini. `env:setup` membuat JWT dan password awal yang masih kosong; tidak mengganti konfigurasi yang sudah terisi.
 
-## Scripts
+Untuk database baru:
 
-```bash
-npm run dev    # mode development
-npm run build  # build untuk production
-npm run start  # menjalankan hasil build
-npm run lint   # menjalankan ESLint
+```powershell
+npm.cmd run db:setup
+npm.cmd run backend:check
+npm.cmd run dev
 ```
 
-## Struktur Direktori
+Untuk database yang sudah berisi data, gunakan salinan/branch database pengembangan, kemudian:
 
-```
-app/            # page.tsx, layout.tsx, globals.css
-public/         # aset statis
-next.config.ts
-tsconfig.json
-package.json
-```
-
-Tidak ada konfigurasi tambahan. Tanpa `.env`, database, maupun Docker.
-
----
-
-## Panduan Kerjasama (Branch & Kolaborasi)
-
-Panduan ini wajib diikuti semua kontributor agar riwayat git tetap rapi dan review mudah.
-
-### 1. Format Branch
-
-```
-<type>/<nama>/<pekerjaan>
+```powershell
+npm.cmd run db:generate
+npm.cmd run db:push
+npm.cmd run db:sync-counters
+npm.cmd run db:seed
+npm.cmd run backend:check
+npm.cmd run dev
 ```
 
-| Bagian | Aturan | Contoh |
-|---|---|---|
-| `<type>` | Jenis pekerjaan. Pilih salah satu di bawah | `feat`, `fix`, `chore` |
-| `<nama>` | Nama panggilan / username GitHub, huruf kecil, tanpa spasi, kebab-case | `arfa`, `budi`, `putri` |
-| `<pekerjaan>` | Deskripsi singkat pekerjaan, kebab-case, 2–4 kata, tanpa spasi | `form-laporan`, `tracking-laporan` |
+Jangan lanjut dengan opsi `--accept-data-loss` bila Prisma meminta penghapusan data. Kolom baru bersifat tambahan; periksa perbedaan schema bila ada peringatan. Rincian upgrade ada di `docs/BACKEND.md`.
 
-**Daftar `<type>` yang diizinkan:**
+Biarkan terminal tetap menyala. Buka:
 
-- `feat` / `feature` — fitur baru
-- `fix` — perbaikan bug
-- `chore` — tooling, deps, config, build
-- `docs` — dokumentasi
-- `refactor` — refactor tanpa ubah behavior
-- `style` — styling/UI saja
-- `test` — tambah/perbaiki test
+- `http://localhost:3000` — beranda dan layanan aktif.
+- `http://localhost:3000/pelaporan` — kirim laporan beserta bukti.
+- `http://localhost:3000/tracking` — lacak status dan tanggapan.
+- `http://localhost:3000/laporan-publik` — laporan yang dipublikasikan admin.
+- `http://localhost:3000/login` — login admin atau petugas.
+- `http://localhost:3000/admin` — dashboard; meminta login terlebih dahulu.
+- `http://localhost:3000/api/health` — status dasar backend/database.
 
-**Contoh benar:**
+Akun awal: **admin** dan **petugas01**. Password mengikuti `SEED_ADMIN_PASSWORD` dan `SEED_PETUGAS_PASSWORD` di `.env` saat akun pertama dibuat. Seed ulang tidak mengganti password akun lama. Laporan demo tidak dibuat; angka dashboard mengikuti data sebenarnya. Layanan awal kosong dan dapat ditambahkan admin.
 
-```
-feat/arfa/form-laporan
-feat/budi/section-profil
-feat/putri/tracking-laporan
-fix/arfa/validasi-form
-fix/budi/upload-foto
-chore/putri/update-deps
-docs/arfa/panduan-branch
-refactor/budi/footer-layout
-```
+## Fitur yang tersambung
 
-**Contoh salah:**
+- Laporan warga tanpa akun: kategori, instansi tujuan, validasi, nomor harian WIB dan kode tracking unik.
+- Unggah sampai tiga bukti PNG/JPEG/PDF, maksimal 5 MB per file. Bukti disimpan privat; upload gagal dapat dicoba ulang tanpa membuat laporan baru.
+- Tracking status dan tanggapan tanpa menampilkan identitas/kontak/bukti.
+- Login cookie HttpOnly untuk browser dan Bearer token untuk klien API. Logout, penonaktifan akun dan perubahan akun membatalkan sesi.
+- Dashboard dengan angka, grafik mingguan/bulanan dan sebaran kategori dari database; tombol perbarui untuk memuat data terbaru.
+- Daftar laporan dengan pencarian, filter, pagination, urutan, detail, perubahan status, tanggapan dan bukti.
+- Kelola kategori, akun internal, layanan serta publikasi ringkasan laporan khusus admin. Petugas hanya melihat fungsi yang sesuai rolenya.
+- Ekspor rekap CSV maksimal 10.000 laporan terbaru, tanpa kontak/nama pelapor maupun kode tracking.
 
-```
-Feat/Arfa/Form Laporan       # jangan pakai huruf besar & spasi
-feature-arfa-form-laporan    # harus pakai slash /
-feat/arfa/                   # pekerjaan tidak boleh kosong
+Alur status: DIAJUKAN → DIVERIFIKASI → DIPROSES → SELESAI. Penolakan membutuhkan alasan. Laporan baru tidak langsung ditampilkan publik; admin menulis judul/ringkasan publik yang bebas identitas warga.
+
+## Pengujian
+
+```powershell
+npm.cmd run verify
 ```
 
-### 2. Alur Kerja (Workflow)
+Menjalankan lint, unit/database test, integrasi embedded, build, dan TypeScript. Tidak memerlukan Neon untuk unit/embedded/build. Hasil pengujian aktual dan batasnya ada di `docs/HASIL-PENGUJIAN.md`.
 
-```bash
-# 1. Sync main terbaru
-git checkout main
-git pull origin main
+Tes HTTP pada database uji milikmu (setelah build):
 
-# 2. Buat branch baru sesuai format
-git checkout -b feat/arfa/nama-pekerjaan
-
-# 3. Kerjakan, lalu commit dengan pesan jelas
-git add .
-git commit -m "feat: tambah form laporan warga"
-
-# 4. Push branch ke remote
-git push -u origin feat/arfa/nama-pekerjaan
-
-# 5. Buka Pull Request (PR) di GitHub: base = main, compare = branch kamu
-# 6. Tunggu CI lolos (lint, test, build) dan minta 1 review
-# 7. Setelah di-approve -> Squash and merge -> hapus branch
+```powershell
+$env:ALLOW_INTEGRATION_TEST = '1'
+npm.cmd run test:http
 ```
 
-**Aturan penting:**
+Runner membuka server sendiri, menguji endpoint, membersihkan data milik pengujian dan menutup server. Counter tetap maju. Gunakan database uji terpisah.
 
-- Selalu branch dari `main` terbaru. Jangan branch dari branch orang lain tanpa koordinasi.
-- Satu branch = satu pekerjaan/fitur. Jangan campur banyak fitur dalam satu branch.
-- Jangan push langsung ke `main`. Semua perubahan wajib lewat PR.
-- Selalu `git pull --rebase origin main` jika `main` sudah maju saat kamu masih mengerjakan branch.
-- Hapus branch setelah PR di-merge (`git branch -d feat/arfa/nama-pekerjaan`).
-
-### 3. Aturan Commit & Pull Request
-
-**Commit message (disarankan Conventional Commits):**
-
-```
-feat: tambah form laporan warga
-feat: tambah halaman tracking laporan
-fix: perbaiki validasi form pengaduan
-fix: perbaiki upload foto laporan
-chore: update deps Next 16
-docs: tambah panduan kerjasama di README
-```
-
-**Judul PR:** jelas dan pakai prefix yang sama, contoh `feat(arfa): form laporan warga`
-
-**Deskripsi PR wajib isi:**
-
-- Apa yang diubah (what)
-- Kenapa diubah (why)
-- Cara test manual (jika perlu)
-- Screenshot (untuk perubahan UI)
-
-**Checklist sebelum minta review:**
-
-- [ ] `npm run lint` lolos
-- [ ] `npm run test` lolos (jika ada test)
-- [ ] `npm run build` berhasil
-- [ ] Tidak ada `console.log` tertinggal
-- [ ] Sudah test manual di `http://localhost:3000`
-
-### 4. Review & Merge
-
-- Minimal 1 approval sebelum merge.
-- CI di `.github/workflows/ci.yml` wajib hijau (lint, test, build).
-- Merge strategy: **Squash and merge** agar riwayat `main` tetap bersih.
-- Konflik? Rebase dari `main` dulu, jangan merge `main` ke branch kamu.
-
-### 5. Penamaan Lain
-
-- Issue branch opsional: boleh tambah nomor issue di pekerjaan, contoh `feat/arfa/12-form-laporan` jika pakai GitHub Issues.
-- Hotfix urgent: `fix/putri/hotfix-form-laporan` lalu PR langsung dengan label `urgent`.

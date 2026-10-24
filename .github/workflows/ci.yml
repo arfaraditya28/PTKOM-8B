@@ -1,0 +1,39 @@
+name: Backend checks
+on:
+  pull_request:
+  push:
+    branches: [main, syehab, backend-syehab, 'feat/syehab/**']
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ptkom_test
+          POSTGRES_PASSWORD: ci_test_password
+          POSTGRES_DB: ptkom_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ptkom_test -d ptkom_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ptkom_test:ci_test_password@127.0.0.1:5432/ptkom_test?sslmode=disable
+      JWT_SECRET: ci-only-secret-for-ephemeral-test-database-at-least-32-characters
+      ALLOW_INTEGRATION_TEST: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:push
+      - run: npm run backend:check
+      - run: npm run verify
+      - run: npm run test:http

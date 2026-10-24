@@ -1,13 +1,17 @@
 
+import Image from "next/image";
+
 export default function Layanan() {
   return (
     <section className="flex items-center justify-between gap-4 rounded-2xl border border-[#D3E4FE] bg-[#EFF4FF] p-5 shadow-sm">
       {/* Ikon dan informasi di kiri */}
       <div className="flex min-w-0 items-center gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
-          <img
+          <Image
             src="/icon-peringatan.svg"
             alt=""
+            width={16}
+            height={16}
             className="h-4 w-4 object-contain"
           />
         </div>

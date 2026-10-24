@@ -9,22 +9,17 @@ import {
   Tooltip,
 } from "recharts";
 
-const dataKategori = [
-  { nama: "Infrastruktur & Jalan", jumlah: 42, warna: "#005CBD" },
-  { nama: "Pelayanan Publik & KTP", jumlah: 25, warna: "#0F3460" },
-  { nama: "Kkebersihan & Lingkungan", jumlah: 16, warna: "#2FB257" },
-  { nama: "Ketertiban & Keamanan", jumlah: 11, warna: "#F59E0B" },
-  { nama: "Sosial & Bantuan", jumlah: 6, warna: "#A855F7" },
-];
-
 type KategoriAduanProps = {
   totalAduan: string | number;
+  categories: { categoryId: string; categoryName: string; count: number }[];
 };
 
 export default function KategoriAduan({
-  totalAduan,
+  totalAduan, categories,
 }: KategoriAduanProps) {
 
+  const colors = ["#005CBD", "#0F3460", "#2FB257", "#F59E0B", "#A855F7"];
+  const dataKategori = categories.map((c, i) => ({ nama: c.categoryName, jumlah: c.count, warna: colors[i % colors.length] }));
   return (
     <section className="h-full min-w-0 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
       {/* Header */}
@@ -39,7 +34,7 @@ export default function KategoriAduan({
         </div>
 
         <span className="shrink-0 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
-          Bulan ini
+          Semua laporan
         </span>
       </div>
 
@@ -48,6 +43,7 @@ export default function KategoriAduan({
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
+                isAnimationActive={false}
                 data={dataKategori}
                 dataKey="jumlah"
                 nameKey="nama"
@@ -67,7 +63,7 @@ export default function KategoriAduan({
             </Pie>
 
             <Tooltip
-                formatter={(value, name) => [`${value}%`, name]}
+                formatter={(value, name) => [`${value} laporan`, name]}
             />
 
             <text
@@ -90,7 +86,7 @@ export default function KategoriAduan({
                 className="fill-slate-500"
                 fontSize={11}
             >
-                ADUAN AKTIF
+                TOTAL LAPORAN
             </text>
           </PieChart>
         </ResponsiveContainer>
@@ -114,7 +110,7 @@ export default function KategoriAduan({
             </div>
 
             <span className="shrink-0 text-sm font-semibold text-slate-700">
-              {kategori.jumlah}%
+              {kategori.jumlah}
             </span>
           </div>
         ))}

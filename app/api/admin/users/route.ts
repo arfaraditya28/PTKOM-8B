@@ -1,22 +1,11 @@
+import { api, body } from "@/src/lib/http";
+import { requireUser, hashPassword } from "@/src/lib/auth";
 import { prisma } from "@/src/lib/prisma";
-import { forbidden, getAuthUser, unauthorized } from "@/src/lib/auth";
-
-/** GET /api/admin/users — daftar pengguna internal (khusus ADMIN). */
-export async function GET(req: Request) {
-  const user = getAuthUser(req);
-  if (!user) return unauthorized();
-  if (user.role !== "ADMIN") return forbidden("Hanya admin.");
-
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      name: true,
-      username: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-  return Response.json({ data: users });
-}
+import { createUserSchema } from "@/src/lib/validators";
+import { userSelect } from "@/src/lib/users";
+export const GET = api(async (req: Request) => { await requireUser(req, true); return Response.json({ data: await prisma.user.findMany({ select: userSelect, orderBy: { createdAt: "asc" } }) }); });
+export const POST = api(async (req: Request) => {
+  await requireUser(req, true); const data = await body(req, createUserSchema);
+  const user = await prisma.user.create({ data: { ...data, password: await hashPassword(data.password) }, select: userSelect });
+  return Response.json({ data: user }, { status: 201 });
+});
