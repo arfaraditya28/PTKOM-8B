@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type Category = {
   id: string;
@@ -9,6 +10,8 @@ type Category = {
 };
 
 type CreateSuccess = {
+  id: string;
+  uploadToken: string;
   reportNumber: string;
   trackingCode: string;
 };
@@ -31,6 +34,9 @@ export default function Pelaporan() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<CreateSuccess | null>(null);
+  const [today] = useState(() => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10));
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadMessage, setUploadMessage] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +51,22 @@ export default function Pelaporan() {
 
   function set<K extends keyof typeof initialForm>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function uploadFiles(report: CreateSuccess, pending: File[]) {
+    const failed: File[] = [];
+    for (const file of pending) {
+      try {
+        const body = new FormData(); body.append("file", file);
+        const response = await fetch(`/api/reports/${report.id}/attachments`, {
+          method: "POST", headers: { Authorization: `Bearer ${report.uploadToken}` }, body,
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "Unggahan gagal.");
+      } catch { failed.push(file); }
+    }
+    setFiles(failed);
+    setUploadMessage(failed.length ? `${failed.length} bukti belum terunggah. Laporan sudah tersimpan; coba unggah ulang tanpa membuat laporan baru. Jika token sudah kedaluwarsa, hubungi petugas.` : pending.length ? "Semua bukti berhasil diunggah." : "");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +90,9 @@ export default function Pelaporan() {
           "error" in json ? json.error : "Gagal mengirim laporan."
         );
       }
-      setResult(json as CreateSuccess);
+      const created = json as CreateSuccess;
+      setResult(created);
+      await uploadFiles(created, files);
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Gagal mengirim laporan."
@@ -129,9 +153,17 @@ export default function Pelaporan() {
               </button>
             </div>
           </div>
+          {submitting && <p className="mt-4" role="status">Mengunggah bukti, tunggu sampai selesai...</p>}
+          {uploadMessage && <p role="status" className="mx-auto mt-4 max-w-xl text-sm">{uploadMessage}</p>}
+          {files.length > 0 && !submitting && <button type="button" onClick={async () => {
+            setSubmitting(true); try { await uploadFiles(result, files); } finally { setSubmitting(false); }
+          }} className="mt-4 rounded bg-blue-100 px-4 py-2 text-blue-800">Coba unggah bukti lagi</button>}
+          <Link href="/tracking" className="mt-5 block text-blue-700 underline">Lacak laporan dengan kode tracking</Link>
           <button
             type="button"
+            disabled={submitting}
             onClick={() => {
+              setFiles([]); setUploadMessage("");
               setForm(initialForm);
               setResult(null);
             }}
@@ -183,6 +215,7 @@ export default function Pelaporan() {
           </label>
           <textarea
             rows={4}
+            maxLength={10000}
             required
             minLength={10}
             value={form.description}
@@ -197,7 +230,7 @@ export default function Pelaporan() {
           <input
             type="date"
             required
-            max={new Date().toISOString().slice(0, 10)}
+            max={today}
             value={form.incidentDate}
             onChange={(e) => set("incidentDate", e.target.value)}
             className={inputClass}/>
@@ -210,6 +243,8 @@ export default function Pelaporan() {
           <input
             type="text"
             required
+            minLength={3}
+            maxLength={500}
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
             className={inputClass}/>
@@ -283,49 +318,18 @@ export default function Pelaporan() {
             className={inputClass}/>
         </div>
 
-        {/* Upload Foto (nonaktif — segera hadir) */}
-        <div className="pointer-events-none mx-14 mt-8 rounded-lg bg-[#F1F4F6] px-6 py-5 text-center opacity-60 select-none" aria-disabled="true">
-        <span className="mb-2 inline-block rounded-full bg-[#D4E3FF] px-3 py-1 text-xs font-bold text-[#0F365F]">
-          Segera hadir
-        </span>
-        <div className="mb-2 text-xl">
-          <img
-            src="/icon-upload.svg"
-            alt="Upload"
-            className="mx-auto w-12 h-10"
-          />
+        <div className="mt-8 rounded-lg bg-[#F1F4F6] px-6 py-5 text-left">
+          <label htmlFor="evidence" className="block text-lg font-semibold">Bukti pendukung (opsional)</label>
+          <p className="mt-1 text-sm">Pilih maksimal 3 file PNG, JPEG, atau PDF; maksimal 5 MB per file. Bukti hanya dapat dilihat petugas.</p>
+          <input id="evidence" type="file" multiple accept="image/png,image/jpeg,application/pdf" className="mt-3 max-w-full text-sm" onChange={event => {
+            const selected = Array.from(event.target.files || []);
+            if (selected.length > 3 || selected.some(file => file.size > 5 * 1024 * 1024)) {
+              setSubmitError("Pilih maksimal 3 file, masing-masing maksimal 5 MB."); event.target.value = ""; setFiles([]); return;
+            }
+            setSubmitError(null); setFiles(selected);
+          }} />
         </div>
-
-        <p className="text-lg font-semibold">
-          Tarik foto kerusakan ke sini atau{" "}
-          <span className="text-[#1960A3] underline">
-            pilih dari galeri
-          </span>
-        </p>
-
-        <p className="mt-1 text-sm">
-          Sertakan foto bukti yang terang dan jelas agar petugas peninjau cepat mengidentifikasi lokasi.
-        </p>
-        </div>
-
-        <div className="mt-6 flex items-start gap-2 text-left">
-          <input
-            type="checkbox"
-            id="anonymous"
-            name="anonymous"
-            className="mt-1 accent-[#002041]"/>
-
-        <div className="flex-1 text-left">
-          <label htmlFor="anonymous" className="text-sm font-bold text-[#0F365F]">
-            Rahasiakan Nama Saya (Anonim Publik)
-          </label>
-
-          <p className="mt-1 text-xs font-semibold text-black">
-            Nama Anda disamarkan di halaman publik transparansi masyarakat,
-            namun tercatat aman di sistem verifikasi internal.
-          </p>
-        </div>
-        </div>
+        <p className="text-left text-xs text-slate-600">Nama, kontak, lokasi lengkap, dan bukti tersimpan untuk petugas. Laporan baru tidak langsung tampil publik. Admin hanya mempublikasikan judul dan ringkasan yang telah diperiksa tanpa identitas warga.</p>
 
         {submitError && (
           <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-left text-sm font-semibold text-red-700">

@@ -1,0 +1,678 @@
+{
+  "info": {
+    "name": "PTKOM 8B Backend",
+    "description": "Gunakan database uji. Jalankan berurutan; pilih file pada langkah upload. Jangan menjalankan ulang tambah kategori/akun dengan nama yang sama tanpa mengubahnya. Isi password seed pada variabel koleksi.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "adminPassword",
+      "value": "ISI_PASSWORD_SEED"
+    },
+    {
+      "key": "petugasPassword",
+      "value": "ISI_PASSWORD_SEED"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "uploadToken",
+      "value": ""
+    },
+    {
+      "key": "categoryId",
+      "value": ""
+    },
+    {
+      "key": "reportId",
+      "value": ""
+    },
+    {
+      "key": "trackingCode",
+      "value": ""
+    },
+    {
+      "key": "attachmentId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "serviceId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Kesehatan API",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health",
+        "description": "200 jika konfigurasi dasar dan koneksi siap; 503 jika belum siap."
+      }
+    },
+    {
+      "name": "01 Login admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"token\", r.token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Profil sesi",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "03 Kategori publik",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/categories"
+      }
+    },
+    {
+      "name": "04 Tambah kategori",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/categories",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Kategori Uji Backend\",\n  \"description\": \"Pengujian\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"categoryId\", r.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Ubah kategori",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/categories/{{categoryId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Kategori pengujian backend\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "06 Buat laporan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"Jalan berlubang di Sekampung\",\n  \"description\": \"Terdapat lubang besar di tengah jalan.\",\n  \"location\": \"Jalan Raya Sekampung\",\n  \"incidentDate\": \"2026-09-22\",\n  \"reporterName\": \"Warga Contoh\",\n  \"reporterContact\": \"081234567890\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"reportId\", r.id);",
+              "pm.collectionVariables.set(\"trackingCode\", r.trackingCode);",
+              "pm.collectionVariables.set(\"uploadToken\", r.uploadToken);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Upload bukti - pilih file",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{uploadToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/attachments",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"attachmentId\", r.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 Daftar laporan",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports?page=1&limit=20"
+      }
+    },
+    {
+      "name": "09 Detail laporan",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}"
+      }
+    },
+    {
+      "name": "10 Unduh bukti",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/attachments/{{attachmentId}}"
+      }
+    },
+    {
+      "name": "11 Verifikasi",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/status",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"DIVERIFIKASI\",\n  \"note\": \"Data telah diperiksa\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "12 Proses",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/status",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"DIPROSES\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "13 Tanggapan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/comments",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Petugas sedang menangani laporan.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "14 Tracking",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/tracking/{{trackingCode}}"
+      }
+    },
+    {
+      "name": "15 Publikasikan ringkasan",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/visibility",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"isPublic\": true,\n  \"publicTitle\": \"Perbaikan jalan wilayah Sekampung\",\n  \"publicSummary\": \"Laporan kerusakan jalan sedang ditangani petugas.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "16 Laporan publik",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/public/reports"
+      }
+    },
+    {
+      "name": "17 Selesaikan",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/reports/{{reportId}}/status",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"SELESAI\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "18 Tambah akun",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/users",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Petugas Uji\",\n  \"username\": \"petugas-uji\",\n  \"password\": \"PasswordUji12345\",\n  \"role\": \"PETUGAS\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"userId\", r.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 Daftar akun",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/users"
+      }
+    },
+    {
+      "name": "20 Ubah akun",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/users/{{userId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Petugas Pengujian\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "21 Nonaktifkan akun",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/users/{{userId}}"
+      }
+    },
+    {
+      "name": "22 Tambah layanan",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/services",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Surat Keterangan Uji\",\n  \"description\": \"Layanan pengujian backend.\",\n  \"requirements\": \"KTP dan KK\",\n  \"hours\": \"08.00\\u201315.00\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "const r = pm.response.json();",
+              "pm.collectionVariables.set(\"serviceId\", r.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 Ubah layanan",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/services/{{serviceId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contact\": \"Loket kecamatan\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "24 Layanan publik",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/services"
+      }
+    },
+    {
+      "name": "25 Statistik",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/statistics"
+      }
+    },
+    {
+      "name": "26 Hapus bukti",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/attachments/{{attachmentId}}"
+      }
+    },
+    {
+      "name": "27 Hapus layanan",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/services/{{serviceId}}"
+      }
+    },
+    {
+      "name": "28 Hapus kategori terpakai - harus 409",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/admin/categories/{{categoryId}}"
+      }
+    },
+    {
+      "name": "29 Logout semua sesi",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/auth/logout"
+      }
+    }
+  ]
+}

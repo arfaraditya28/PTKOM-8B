@@ -13,44 +13,22 @@ import {
 } from "recharts";
 
 
-const dataMingguan = [
-  { label: "Sen", masuk: 35, selesai: 18 },
-  { label: "Sel", masuk: 42, selesai: 22 },
-  { label: "Rab", masuk: 30, selesai: 16 },
-  { label: "Kam", masuk: 55, selesai: 28 },
-  { label: "Jum", masuk: 38, selesai: 20 },
-  { label: "Sab", masuk: 48, selesai: 25 },
-  { label: "Min", masuk: 0, selesai: 1 },
-];
-
-const dataBulanan = [
-  { label: "Jan", masuk: 18, selesai: 10 },
-  { label: "Feb", masuk: 22, selesai: 12 },
-  { label: "Mar", masuk: 15, selesai: 8 },
-  { label: "Apr", masuk: 25, selesai: 13 },
-  { label: "Mei", masuk: 20, selesai: 11 },
-  { label: "Jun", masuk: 28, selesai: 14 },
-  { label: "Jul", masuk: 16, selesai: 9 },
-  { label: "Agu", masuk: 24, selesai: 12 },
-  { label: "Sep", masuk: 19, selesai: 10 },
-  { label: "Okt", masuk: 27, selesai: 14 },
-  { label: "Nov", masuk: 17, selesai: 8 },
-  { label: "Des", masuk: 37, selesai: 9 },
-];
-
 type StatistikProps = {
   totalMasuk: string | number;
   totalSelesai: string | number;
+  weekly: { label: string; masuk: number; selesai: number }[];
+  monthly: { label: string; masuk: number; selesai: number }[];
+  year: number;
 };
 
 export default function Statistik({
     totalMasuk,
-    totalSelesai,
+    totalSelesai, weekly, monthly, year,
     }: StatistikProps) {
   const [periode, setPeriode] = useState("mingguan");
 
   const chartData =
-    periode === "mingguan" ? dataMingguan : dataBulanan;
+    periode === "mingguan" ? weekly : monthly;
 
   return (
     <section className="h-full min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -60,7 +38,7 @@ export default function Statistik({
             Tren Laporan Masuk & Selesai
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Periode pergerakan volume laporan dan tingkat penyelesaian
+            {periode === "mingguan" ? "Tujuh hari terakhir (WIB)" : `Januari–Desember ${year} (WIB)`}
           </p>
         </div>
 
@@ -109,7 +87,7 @@ export default function Statistik({
             />
 
             <YAxis
-              domain={[0, 60]}
+              domain={[0, "auto"]}
               axisLine={false}
               tickLine={false}
               tick={{ fill: "#64748B", fontSize: 12 }}
@@ -126,6 +104,7 @@ export default function Statistik({
             />
             
             <Area
+                isAnimationActive={false}
                 type="monotone"
                 dataKey="masuk"
                 name="Laporan Masuk"
@@ -136,6 +115,7 @@ export default function Statistik({
             />
 
             <Area
+                isAnimationActive={false}
                 type="monotone"
                 dataKey="selesai"
                 name="Laporan Selesai"

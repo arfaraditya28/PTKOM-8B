@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { fiturLaporan } from "@/src/lib/constants";
+import PublicServices from "./PublicServices";
 
 export function Layanan() {
   return (
@@ -66,6 +67,7 @@ export function Layanan() {
             </a>
           </div>
         </div>
+        <PublicServices />
       </div>
     </section>
   );

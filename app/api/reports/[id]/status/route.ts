@@ -1,57 +1,18 @@
-import { prisma } from "@/src/lib/prisma";
-import { getAuthUser, unauthorized } from "@/src/lib/auth";
+import { api, ApiError, body, serializable } from "@/src/lib/http";
+import { requireUser } from "@/src/lib/auth";
 import { updateStatusSchema } from "@/src/lib/validators";
-
-/** PATCH /api/reports/:id/status — ubah status laporan (butuh login). */
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const user = getAuthUser(req);
-  if (!user) return unauthorized();
-
-  const { id } = await context.params;
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Body harus JSON valid." }, { status: 400 });
-  }
-
-  const parsed = updateStatusSchema.safeParse(body);
-  if (!parsed.success) {
-    return Response.json(
-      { error: "Status tidak valid.", details: parsed.error.flatten() },
-      { status: 400 }
-    );
-  }
-
-  const existing = await prisma.report.findUnique({ where: { id } });
-  if (!existing) {
-    return Response.json({ error: "Laporan tidak ditemukan." }, { status: 404 });
-  }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const report = await tx.report.update({
-      where: { id },
-      data: { status: parsed.data.status },
-    });
-    await tx.statusHistory.create({
-      data: {
-        reportId: id,
-        userId: user.id,
-        status: parsed.data.status,
-        note: parsed.data.note,
-      },
-    });
-    return report;
+import { canTransition } from "@/src/lib/workflow";
+export const PATCH = api(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
+  const user = await requireUser(req); const { id } = await ctx.params;
+  const data = await body(req, updateStatusSchema);
+  const updated = await serializable(async tx => {
+    const report = await tx.report.findUnique({ where: { id } });
+    if (!report) throw new ApiError(404, "Laporan tidak ditemukan.");
+    if (!canTransition(report.status, data.status)) throw new ApiError(409, `Perubahan ${report.status} ke ${data.status} tidak diizinkan.`);
+    const changed = await tx.report.updateMany({ where: { id, status: report.status }, data: { status: data.status } });
+    if (!changed.count) throw new ApiError(409, "Status baru saja berubah, muat ulang laporan.");
+    await tx.statusHistory.create({ data: { reportId: id, userId: user.id, ...data } });
+    return { id, reportNumber: report.reportNumber, status: data.status };
   });
-
-  return Response.json({
-    data: {
-      id: updated.id,
-      reportNumber: updated.reportNumber,
-      status: updated.status,
-    },
-  });
-}
+  return Response.json({ data: updated });
+});
