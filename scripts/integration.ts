@@ -172,6 +172,7 @@ async function run() {
   await request(`/api/admin/categories/${emptyCategory.id}`, 'DELETE', undefined, admin, 404);
   await request(`/api/reports/${report.id}/status`, 'PATCH', { status: 'SELESAI' }, staff);
   await request(`/api/reports/${report.id}/status`, 'PATCH', { status: 'DIPROSES' }, staff, 409);
+  await request(`/api/reports/${report.id}/comments`, 'POST', { message: 'Tanggapan setelah ditutup.' }, staff, 409);
   await checkedUpload(report.uploadToken, report.id, undefined, 409);
   await request(`/api/admin/users/${petugas.id}`, 'PATCH', { name: 'Petugas Diperbarui' }, admin);
   await request('/api/auth/me', 'GET', undefined, staff, 401);

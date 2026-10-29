@@ -39,7 +39,7 @@ export default function KategoriAduan({
       </div>
 
       {/* Diagram lingkaran */}
-      <div className="h-[220px] w-full">
+      <div className="relative h-[220px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -65,31 +65,12 @@ export default function KategoriAduan({
             <Tooltip
                 formatter={(value, name) => [`${value} laporan`, name]}
             />
-
-            <text
-                x="50%"
-                y="47%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="fill-slate-800"
-                fontSize={25}
-                fontWeight={700}
-            >
-                {totalAduan}
-            </text>
-
-            <text
-                x="50%"
-                y="59%"
-                textAnchor="middle"
-                dominantBaseline="middle"
-                className="fill-slate-500"
-                fontSize={11}
-            >
-                TOTAL LAPORAN
-            </text>
           </PieChart>
         </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold text-slate-800">{totalAduan}</span>
+          <span className="text-[11px] text-slate-500">TOTAL LAPORAN</span>
+        </div>
       </div>
 
       {/* Keterangan warna */}

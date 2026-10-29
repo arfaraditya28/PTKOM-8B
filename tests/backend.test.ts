@@ -8,10 +8,10 @@ import { detectFile } from '../src/lib/attachments';
 import { api, ApiError, body } from '../src/lib/http';
 import { canUpload, signUploadToken } from '../src/lib/auth';
 const report = { categoryId: 'cat', title: 'Jalan rusak', description: 'Jalan rusak perlu diperbaiki.', location: 'Sekampung', incidentDate: '2026-09-22', reporterName: 'Warga', reporterContact: '08123456789' };
-test('tanggal kalender: leap year dan tanggal tidak nyata', () => {
+test('tanggal kalender: leap year, tanggal tidak nyata dan tanggal masa depan', () => {
   assert.equal(dateOnly.safeParse('2024-02-29').success, true);
   assert.equal(dateOnly.parse(' 2024-02-29 '), '2024-02-29');
-  for (const v of ['2026-02-29', '2026-02-30', '2026-13-01', '22/09/2026', '2026-09-22T12:00:00Z']) assert.equal(dateOnly.safeParse(v).success, false);
+  for (const v of ['2026-02-29', '2026-02-30', '2026-13-01', '22/09/2026', '2026-09-22T12:00:00Z', '2999-01-01']) assert.equal(dateOnly.safeParse(v).success, false);
 });
 test('laporan menolak kosong, spasi, field tambahan dan teks berlebihan', () => {
   assert.equal(createReportSchema.safeParse(report).success, true);

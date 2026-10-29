@@ -1,4 +1,4 @@
-import { api, body } from "@/src/lib/http";
+import { api, ApiError, body } from "@/src/lib/http";
 import { prisma } from "@/src/lib/prisma";
 import { getAuthUser, unauthorized } from "@/src/lib/auth";
 import { addCommentSchema } from "@/src/lib/validators";
@@ -17,6 +17,9 @@ export const POST = api(async function (
   const existing = await prisma.report.findUnique({ where: { id } });
   if (!existing) {
     return Response.json({ error: "Laporan tidak ditemukan." }, { status: 404 });
+  }
+  if (["SELESAI", "DITOLAK"].includes(existing.status)) {
+    throw new ApiError(409, "Laporan sudah ditutup dan tidak menerima tanggapan baru.");
   }
 
   const comment = await prisma.comment.create({

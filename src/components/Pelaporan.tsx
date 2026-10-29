@@ -1,7 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
+
+function LaporanHeader() {
+  return (
+    <header className="sticky top-0 z-50 border-b border-black/5 bg-white">
+      <div className="flex w-full items-center justify-between gap-4 px-6 py-4 sm:px-10 lg:px-14">
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/logo-sekampung.png"
+            alt="Logo Kecamatan Sekampung"
+            width={56}
+            height={64}
+            className="h-11 w-auto shrink-0 sm:h-14"
+            priority
+          />
+          <span className="flex min-w-0 flex-col leading-tight text-left">
+            <span className="truncate text-base font-extrabold tracking-tight text-black sm:text-2xl">
+              Kecamatan Sekampung
+            </span>
+            <span className="truncate text-xs text-black sm:text-sm">
+              Portal Layanan Publik
+            </span>
+          </span>
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border-2 border-[#1960A3] px-3 py-2 text-xs font-semibold text-[#1960A3] transition-colors hover:bg-[#1960A3] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1960A3] focus-visible:ring-offset-2 sm:px-4 sm:text-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5" />
+            <path d="m12 19-7-7 7-7" />
+          </svg>
+          Kembali ke Beranda
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 type Category = {
   id: string;
@@ -27,13 +75,104 @@ const initialForm = {
   reporterContact: "",
 };
 
+function CategorySelect({
+  value,
+  onChange,
+  categories,
+  error,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  categories: Category[];
+  error: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selected = categories.find((c) => c.id === value);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Kategori Laporan"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border-2 border-[#1960A3] bg-white px-3 py-2 text-left text-sm text-slate-900 transition-colors hover:bg-[#F5F7FB] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1960A3] focus-visible:ring-offset-2"
+      >
+        <span className={selected ? "truncate" : "truncate text-slate-500"}>
+          {selected?.name ?? (error ?? "Pilih kategori")}
+        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`h-4 w-4 shrink-0 text-[#1960A3] transition-transform ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Pilihan kategori laporan"
+          className="absolute left-0 right-0 z-30 mt-1 max-h-64 overflow-auto rounded-lg border border-slate-300 bg-white py-1 shadow-lg"
+        >
+          {categories.length === 0 && (
+            <li className="px-3 py-2 text-sm text-slate-500">
+              {error ?? "Kategori belum tersedia."}
+            </li>
+          )}
+          {categories.map((c) => (
+            <li key={c.id} role="option" aria-selected={c.id === value}>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(c.id);
+                  setOpen(false);
+                }}
+                className={`block w-full cursor-pointer px-3 py-2 text-left text-sm transition-colors hover:bg-[#F5F7FB] ${
+                  c.id === value ? "bg-[#EAF2FB] font-semibold text-[#0F365F]" : "text-slate-900"
+                }`}
+              >
+                {c.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function Pelaporan() {
-  const [form, setForm] = useState(initialForm);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [form, setForm] = useState(initialForm);  const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<CreateSuccess | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [today] = useState(() => new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10));
   const [files, setFiles] = useState<File[]>([]);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -72,6 +211,10 @@ export default function Pelaporan() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
+    if (!form.categoryId) {
+      setSubmitError("Pilih kategori laporan terlebih dahulu.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/reports", {
@@ -114,8 +257,10 @@ export default function Pelaporan() {
 
   if (result) {
     return (
-      <main className="min-h-screen bg-[#FFFFFF] px-6 py-10">
-        <section className="mx-auto max-w-5xl text-center">
+      <>
+        <LaporanHeader />
+        <main className="min-h-screen bg-[#F1F1F1] px-6 py-10">
+        <section className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
           <div className="mx-auto w-fit rounded border border-green-300 bg-green-50 px-4 py-2 text-sm font-semibold text-green-800">
             Laporan Berhasil Dibuat!
           </div>
@@ -173,15 +318,18 @@ export default function Pelaporan() {
           </button>
         </section>
       </main>
+      </>
     );
   }
 
   const inputClass =
-    "w-full rounded-lg border-2 border-[#1960A3] px-3 py-0.5";
+    "w-full rounded-lg border-2 border-[#1960A3] px-3 py-2";
 
   return (
-    <main className="min-h-screen bg-[#FFFFFF] px-6 py-10">
-      <section className="mx-auto max-w-5xl text-center">
+    <>
+      <LaporanHeader />
+      <main className="min-h-screen bg-[#F1F1F1] px-6 py-10">
+      <section className="mx-auto max-w-7xl rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm sm:px-10">
         <h1 className="text-2xl font-bold">
           Layanan Aspirasi dan Pengaduan Online Rakyat
         </h1>
@@ -194,7 +342,7 @@ export default function Pelaporan() {
           Sampaikan Laporan Anda
         </h2>
 
-        <form onSubmit={handleSubmit} className="mx-auto mt-6 max-w-5xl space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
           <label className="mb-1 block text-left text-base font-bold text-[#0F365F]">
             Judul Laporan
@@ -206,6 +354,7 @@ export default function Pelaporan() {
             maxLength={200}
             value={form.title}
             onChange={(e) => set("title", e.target.value)}
+            placeholder="Contoh: Jalan rusak di depan SD Negeri 1"
             className={inputClass}/>
         </div>
 
@@ -220,9 +369,11 @@ export default function Pelaporan() {
             minLength={10}
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
-            className="w-full rounded-lg border-2 border-[#1960A3] px-3 py-1.5"/>
+            placeholder="Jelaskan kronologi, dampak, dan detail kejadian secara jelas."
+            className="w-full rounded-lg border-2 border-[#1960A3] px-3 py-2"/>
         </div>
 
+        <div className="grid gap-4 text-left sm:grid-cols-2">
         <div>
           <label className="mb-1 block text-left text-base font-bold text-[#0F365F]">
             Tanggal Kejadian
@@ -247,6 +398,7 @@ export default function Pelaporan() {
             maxLength={500}
             value={form.location}
             onChange={(e) => set("location", e.target.value)}
+            placeholder="Contoh: Jl. Raya Sekampung, Desa Sumbergede"
             className={inputClass}/>
         </div>
 
@@ -268,20 +420,12 @@ export default function Pelaporan() {
           <label className="mb-1 block text-left text-base font-bold text-[#0F365F]">
             Kategori Laporan
           </label>
-          <select
-            required
+          <CategorySelect
             value={form.categoryId}
-            onChange={(e) => set("categoryId", e.target.value)}
-            className={`${inputClass} py-1.5`}>
-            <option value="" disabled>
-              {categoriesError ?? "Pilih kategori"}
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            onChange={(id) => set("categoryId", id)}
+            categories={categories}
+            error={categoriesError}
+          />
           {categoriesError && (
             <p className="mt-1 text-left text-xs font-semibold text-red-600">
               {categoriesError}
@@ -300,6 +444,7 @@ export default function Pelaporan() {
             maxLength={100}
             value={form.reporterName}
             onChange={(e) => set("reporterName", e.target.value)}
+            placeholder="Contoh: Arfa Raditya"
             className={inputClass}/>
         </div>
 
@@ -317,17 +462,67 @@ export default function Pelaporan() {
             onChange={(e) => set("reporterContact", e.target.value)}
             className={inputClass}/>
         </div>
+        </div>
 
-        <div className="mt-8 rounded-lg bg-[#F1F4F6] px-6 py-5 text-left">
-          <label htmlFor="evidence" className="block text-lg font-semibold">Bukti pendukung (opsional)</label>
+        <div className="mt-8 rounded-lg bg-[#F1F4F6] px-6 py-5 text-center">
+          <p className="block text-lg font-semibold">Bukti pendukung (opsional)</p>
           <p className="mt-1 text-sm">Pilih maksimal 3 file PNG, JPEG, atau PDF; maksimal 5 MB per file. Bukti hanya dapat dilihat petugas.</p>
-          <input id="evidence" type="file" multiple accept="image/png,image/jpeg,application/pdf" className="mt-3 max-w-full text-sm" onChange={event => {
-            const selected = Array.from(event.target.files || []);
-            if (selected.length > 3 || selected.some(file => file.size > 5 * 1024 * 1024)) {
-              setSubmitError("Pilih maksimal 3 file, masing-masing maksimal 5 MB."); event.target.value = ""; setFiles([]); return;
-            }
-            setSubmitError(null); setFiles(selected);
-          }} />
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (fileInputRef.current) fileInputRef.current.value = "";
+                fileInputRef.current?.click();
+              }}
+              className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[#1960A3] px-4 py-2 text-sm font-bold text-white shadow transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1960A3] focus-visible:ring-offset-2"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="m17 8-5-5-5 5" />
+                <path d="M12 3v12" />
+              </svg>
+              {files.length ? "Ganti File" : "Pilih File"}
+            </button>
+            <span className="text-xs text-slate-600">
+              {files.length ? `${files.length} file dipilih` : "PNG, JPG, atau PDF"}
+            </span>
+          </div>
+          <input
+            ref={fileInputRef}
+            id="evidence"
+            type="file"
+            multiple
+            tabIndex={-1}
+            accept="image/png,image/jpeg,application/pdf"
+            className="sr-only"
+            onChange={event => {
+              const selected = Array.from(event.target.files || []);
+              if (selected.length > 3 || selected.some(file => file.size > 5 * 1024 * 1024)) {
+                setSubmitError("Pilih maksimal 3 file, masing-masing maksimal 5 MB."); event.target.value = ""; setFiles([]); return;
+              }
+              setSubmitError(null); setFiles(selected);
+            }}
+          />
+          {files.length > 0 && (
+            <ul className="mt-3 space-y-1 text-sm">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${file.size}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white px-3 py-1.5">
+                  <span className="truncate">{file.name}</span>
+                  <span className="text-xs text-slate-500">{(file.size / 1024).toFixed(0)} KB</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <p className="text-left text-xs text-slate-600">Nama, kontak, lokasi lengkap, dan bukti tersimpan untuk petugas. Laporan baru tidak langsung tampil publik. Admin hanya mempublikasikan judul dan ringkasan yang telah diperiksa tanpa identitas warga.</p>
 
@@ -349,5 +544,6 @@ export default function Pelaporan() {
       </section>
 
     </main>
+    </>
   );
 }

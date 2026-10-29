@@ -4,10 +4,10 @@ import { Footer } from "@/src/components/Footer";
 
 export default function PelaporanPage() {
   return (
-  <main>
-    <Pelaporan />
-    <LaporanPublik />
-    <Footer />
-    </main>
+    <>
+      <Pelaporan />
+      <LaporanPublik />
+      <Footer />
+    </>
   );
 }

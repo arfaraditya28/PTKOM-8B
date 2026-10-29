@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { ReportStatus } from "@prisma/client";
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
+// Tanggal "hari ini" menurut WIB, bukan zona waktu server.
+function todayWib(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
 export const dateOnly = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v => {
   const d = new Date(`${v}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
-}, "Tanggal tidak valid (YYYY-MM-DD).");
+}, "Tanggal tidak valid (YYYY-MM-DD).").refine(v => v <= todayWib(), "Tanggal kejadian tidak boleh di masa depan.");
 export const createReportSchema = z.object({
   categoryId: text(1, 100), title: text(5, 200), description: text(10, 10000),
   location: text(3, 500), incidentDate: dateOnly,

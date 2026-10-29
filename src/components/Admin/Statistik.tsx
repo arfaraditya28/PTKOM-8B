@@ -100,7 +100,7 @@ export default function Statistik({
                 border: "1px solid #E2E8F0",
                 fontSize: "12px",
               }}
-              formatter={(value) => [value, "Jumlah laporan"]}
+              formatter={(value, name) => [value, name]}
             />
             
             <Area
